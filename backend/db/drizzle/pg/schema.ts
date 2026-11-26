@@ -10,23 +10,12 @@ export const timeRecordTypeEnum = pgEnum("type", [
   "PERMISSION_END",
 ]);
 
-export const calendarTypeEnum = pgEnum("type",[
-    "WORKDAY",
-    "HOLIDAYS",
-    "LEAVE_OF_ABSENCE"
-])
-
-export const requestTypeEnum = pgEnum("type",[
-    "SHIFT_CHANGE",
-    "HOLYDAYS",
-    "PERSONAL_LEAVE"
-])
-
 export const requestStateEnum = pgEnum("state",[
     "ACCEPTED",
     "REJECTED",
     "PENDING"
 ])
+
 
 export const timestamps = {
     createdAt: timestamp({withTimezone:true}),
@@ -126,7 +115,11 @@ export const userRecord = snakeCase.table("userRecord",{
 
 export const calendarType = snakeCase.table("calendarType",{
     id:integer().primaryKey().generatedAlwaysAsIdentity(),
-    type:calendarTypeEnum()
+    workplaceId:integer().references(()=> workplace.id),
+    name:varchar({length:100}).notNull(),
+    forRequest:boolean().default(false).notNull(),
+    isActive:boolean().default(true).notNull(),
+    ...timestamps
 })
 
 export const calendar = snakeCase.table("calendar",{
@@ -135,20 +128,31 @@ export const calendar = snakeCase.table("calendar",{
     calendarTypeId:integer().references(()=>calendarType.id).notNull(),
     start:timestamp({withTimezone:true}).notNull(),
     end:timestamp({withTimezone:true}).notNull(),
+    isActive:boolean().default(true).notNull(),
     ...timestamps
-})
-
-export const requestType = snakeCase.table("requestType",{
-    id:integer().primaryKey().generatedAlwaysAsIdentity(),
-    type:requestTypeEnum()
 })
 
 export const userRequest = snakeCase.table("userRequest",{
     id:integer().primaryKey().generatedAlwaysAsIdentity(),
     userRequestId:integer().references(()=>user.id).notNull(),
+    userRequestCalendarId:integer().references(()=>calendar.id),
     userToChangeId:integer().references(()=>user.id),
-    requestTypeId:integer().references(()=>requestType.id).notNull(),
+    userToChangeCalendarId:integer().references(()=>calendar.id),
+    requestTypeId:integer().references(()=>calendarType.id).notNull(),
+    start:timestamp({withTimezone:true}),
+    end:timestamp({withTimezone:true}),
     aditionalData:text(),
-    state:
+    state:requestStateEnum().notNull().default('PENDING'),
+    ...timestamps
+})
+
+
+export const notification = snakeCase.table("notification",{
+    id:integer().primaryKey().generatedAlwaysAsIdentity(),
+    user01Id:integer().references(()=>user.id),
+    user02Id:integer().references(()=>user.id),
+    userRequestId:integer().references(()=>userRequest.id),
+    type:text(),
+    message:text(),
     ...timestamps
 })
